@@ -14,4 +14,15 @@ function M.is_whitespace(str)
   return str:match("^%s*$") ~= nil
 end
 
+---Apply user command
+---@param cmd string | function
+---@param args any
+function M.apply_command(cmd, args)
+  if type(cmd) == "function" then
+    cmd(args)
+  elseif type(cmd) == "string" then
+    vim.api.nvim_command(string.format(cmd, args))
+  end
+end
+
 return M

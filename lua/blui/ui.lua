@@ -1,7 +1,10 @@
 local utils = require("blui.utils")
+local config = require("blui.config")
+
 local popup = require("plenary.popup")
 local bufferline = require("bufferline")
-local buf_utils = require("bufferline.utils")
+local bufferline_ui = require("bufferline.ui")
+local bufferline_utils = require("bufferline.utils")
 
 local M = {}
 
@@ -55,14 +58,23 @@ local function get_items()
 end
 
 function M.on_save()
-  -- TODO: Allow deleting buffers
   local items = get_items()
-  bufferline.sort_by(function (a, b)
+  bufferline.sort_by(function(a, b)
     if not items[a.path] or not items[b.path] then
       return false
     end
     return items[a.path] < items[b.path]
   end)
+
+  local buf_nums = bufferline_utils.get_valid_buffers()
+  for _, buf in ipairs(buf_nums) do
+    local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":p")
+    if not items[name] then
+      utils.apply_command(config.get_config().close_command, buf)
+    end
+  end
+
+  bufferline_ui.refresh()
 end
 
 function M.toggle_window()
@@ -75,7 +87,7 @@ function M.toggle_window()
   WIN_ID = win_info.win_id
   BUF_ID = win_info.bufnr
 
-  local buf_nums = buf_utils.get_valid_buffers()
+  local buf_nums = bufferline_utils.get_valid_buffers()
   local lines = {}
   for _, buf in ipairs(buf_nums) do
     local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":.")
