@@ -4,7 +4,6 @@ local config = require("blui.config")
 local popup = require("plenary.popup")
 local bufferline = require("bufferline")
 local bufferline_ui = require("bufferline.ui")
-local bufferline_utils = require("bufferline.utils")
 
 local M = {}
 
@@ -59,20 +58,22 @@ end
 
 function M.on_save()
   local items = get_items()
+
+  local buffers = bufferline.get_elements().elements
+  for _, buf in ipairs(buffers) do
+    if not items[buf.path] then
+      utils.run_command(config.get_config().close_command, buf.id)
+    end
+  end
+
+  -- TODO: add create buffer
+
   bufferline.sort_by(function(a, b)
     if not items[a.path] or not items[b.path] then
       return false
     end
     return items[a.path] < items[b.path]
   end)
-
-  local buf_nums = bufferline_utils.get_valid_buffers()
-  for _, buf in ipairs(buf_nums) do
-    local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":p")
-    if not items[name] then
-      utils.apply_command(config.get_config().close_command, buf)
-    end
-  end
 
   bufferline_ui.refresh()
 end
@@ -87,12 +88,11 @@ function M.toggle_window()
   WIN_ID = win_info.win_id
   BUF_ID = win_info.bufnr
 
-  local buf_nums = bufferline_utils.get_valid_buffers()
+  local buffers = bufferline.get_elements().elements
   local lines = {}
-  for _, buf in ipairs(buf_nums) do
-    local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":.")
-    local line = string.format("%s", name)
-    table.insert(lines, line)
+  for _, buf in ipairs(buffers) do
+    local name = vim.fn.fnamemodify(buf.path, ":.")
+    table.insert(lines, name)
   end
 
   vim.api.nvim_win_set_option(WIN_ID, "number", true)
@@ -100,6 +100,7 @@ function M.toggle_window()
   vim.api.nvim_buf_set_name(BUF_ID, "blui-menu")
   vim.api.nvim_buf_set_lines(BUF_ID, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(BUF_ID, "filetype", "blui")
+  vim.api.nvim_buf_set_option(BUF_ID, "swapfile", false)
   vim.api.nvim_buf_set_option(BUF_ID, "buftype", "acwrite")
   vim.api.nvim_buf_set_option(BUF_ID, "bufhidden", "delete")
   vim.api.nvim_buf_set_keymap(
@@ -118,6 +119,7 @@ function M.toggle_window()
   )
 
   vim.cmd(string.format("autocmd BufWriteCmd <buffer=%s> lua require('blui.ui').on_save()", BUF_ID))
+  vim.cmd(string.format("autocmd BufModifiedSet <buffer=%s> set nomodified", BUF_ID))
 end
 
 return M

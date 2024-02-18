@@ -17,7 +17,7 @@ end
 ---Apply user command
 ---@param cmd string | function
 ---@param args any
-function M.apply_command(cmd, args)
+function M.run_command(cmd, args)
   if type(cmd) == "function" then
     cmd(args)
   elseif type(cmd) == "string" then
