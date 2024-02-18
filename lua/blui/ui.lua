@@ -3,7 +3,6 @@ local config = require("blui.config")
 
 local popup = require("plenary.popup")
 local bufferline = require("bufferline")
-local bufferline_ui = require("bufferline.ui")
 
 local M = {}
 
@@ -60,22 +59,31 @@ function M.on_save()
   local items = get_items()
 
   local buffers = bufferline.get_elements().elements
+  local seen = {}
   for _, buf in ipairs(buffers) do
     if not items[buf.path] then
       utils.run_command(config.get_config().close_command, buf.id)
+    else
+      seen[buf.path] = true
     end
   end
 
-  -- TODO: add create buffer
+  for path, _ in pairs(items) do
+    if not seen[path] then
+      vim.api.nvim_buf_set_option(vim.fn.bufadd(path), "buflisted", true)
+    end
+  end
 
+  -- FIXME: update bufferline state before sorting
   bufferline.sort_by(function(a, b)
-    if not items[a.path] or not items[b.path] then
+    if not items[a.path] then
       return false
+    end
+    if not items[b.path] then
+      return true
     end
     return items[a.path] < items[b.path]
   end)
-
-  bufferline_ui.refresh()
 end
 
 function M.toggle_window()
