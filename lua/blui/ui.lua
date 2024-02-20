@@ -1,8 +1,8 @@
-local utils = require("blui.utils")
-local config = require("blui.config")
-
-local popup = require("plenary.popup")
 local bufferline = require("bufferline")
+local popup = require("plenary.popup")
+local config = require("blui.config")
+local utils = require("blui.utils")
+local state = require("blui.state")
 
 local M = {}
 
@@ -42,6 +42,8 @@ local function close_window()
   BUF_ID = nil
 end
 
+---Get the items from the buffer
+---@return State
 local function get_items()
   local lines = vim.api.nvim_buf_get_lines(BUF_ID, 0, -1, true)
   local result = {}
@@ -55,24 +57,38 @@ local function get_items()
   return result
 end
 
-function M.on_save()
-  local items = get_items()
+---@class UpdateStateOpts
+---@field close_buffers boolean | nil
+---@field open_buffers boolean | nil
 
+---Update the bufferline
+---@param items State
+---@param opts UpdateStateOpts | nil
+function M.update_state(items, opts)
+  opts = opts or {}
   local buffers = bufferline.get_elements().elements
   local seen = {}
   for _, buf in ipairs(buffers) do
     if not items[buf.path] then
-      utils.run_command(config.get_config().close_command, buf.id)
+      if opts.close_buffers ~= false then
+        utils.run_command(config.get_config().close_command, buf.id)
+      end
     else
       seen[buf.path] = true
     end
   end
 
   for path, _ in pairs(items) do
-    if not seen[path] then
+    if not seen[path] and opts.open_buffers ~= false then
       vim.api.nvim_buf_set_option(vim.fn.bufadd(path), "buflisted", true)
     end
   end
+end
+
+---Save the bufferline state
+function M.on_save()
+  local items = get_items()
+  M.update_state(items)
 
   vim.schedule(function()
     bufferline.sort_by(function(a, b)
@@ -85,6 +101,8 @@ function M.on_save()
       return items[a.path] < items[b.path]
     end)
   end)
+
+  state.save(items)
 end
 
 function M.toggle_window()

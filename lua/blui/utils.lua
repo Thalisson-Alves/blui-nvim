@@ -25,4 +25,29 @@ function M.run_command(cmd, args)
   end
 end
 
+---Write content to a file
+---@param path string
+---@param content string
+function M.write_file(path, content)
+  local file = io.open(path, "w")
+  if not file then
+    return
+  end
+  file:write(content)
+  file:close()
+end
+
+---Read content from a file
+---@param path string
+---@return string
+function M.read_file(path)
+  local file = io.open(path, "r")
+  if not file then
+    return "{}"
+  end
+  local content = file:read("*a")
+  file:close()
+  return content
+end
+
 return M

@@ -4,7 +4,7 @@ local config = {
   -- FIXME: doesn't delete last buffer
   close_command = "bdelete %d",
   -- TODO: add ui stuff (width, height, etc)
-  -- TODO: persist the last menu per project
+  persist_path = vim.fn.stdpath("data") .. "/blui.json",
 }
 
 function M.setup(opts)
