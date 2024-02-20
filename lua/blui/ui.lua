@@ -74,15 +74,16 @@ function M.on_save()
     end
   end
 
-  -- FIXME: update bufferline state before sorting
-  bufferline.sort_by(function(a, b)
-    if not items[a.path] then
-      return false
-    end
-    if not items[b.path] then
-      return true
-    end
-    return items[a.path] < items[b.path]
+  vim.schedule(function()
+    bufferline.sort_by(function(a, b)
+      if not items[a.path] then
+        return false
+      end
+      if not items[b.path] then
+        return true
+      end
+      return items[a.path] < items[b.path]
+    end)
   end)
 end
 
