@@ -5,7 +5,7 @@ local ui = require("blui.ui")
 local M = {
   toggle = ui.toggle_window,
   load = function()
-    ui.update_state(state.load(), { close_buffers = false })
+    ui.update_state(state.load(), { skip_close = true })
   end,
 }
 

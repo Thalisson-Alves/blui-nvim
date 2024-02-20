@@ -5,6 +5,7 @@ local config = {
   close_command = "bdelete %d",
   -- TODO: add ui stuff (width, height, etc)
   persist_path = vim.fn.stdpath("data") .. "/blui.json",
+  save_on_close = false,
 }
 
 function M.setup(opts)

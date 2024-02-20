@@ -35,6 +35,10 @@ end
 
 local function close_window()
   if utils.is_window_open(WIN_ID) then
+    if config.get_config().save_on_close then
+      M.on_save()
+    end
+
     vim.api.nvim_win_close(WIN_ID, true)
   end
 
@@ -58,8 +62,8 @@ local function get_items()
 end
 
 ---@class UpdateStateOpts
----@field close_buffers boolean | nil
----@field open_buffers boolean | nil
+---@field skip_close boolean | nil
+---@field skip_open boolean | nil
 
 ---Update the bufferline
 ---@param items State
@@ -70,7 +74,7 @@ function M.update_state(items, opts)
   local seen = {}
   for _, buf in ipairs(buffers) do
     if not items[buf.path] then
-      if opts.close_buffers ~= false then
+      if opts.skip_close ~= true then
         utils.run_command(config.get_config().close_command, buf.id)
       end
     else
@@ -79,13 +83,12 @@ function M.update_state(items, opts)
   end
 
   for path, _ in pairs(items) do
-    if not seen[path] and opts.open_buffers ~= false then
-      vim.api.nvim_buf_set_option(vim.fn.bufadd(path), "buflisted", true)
+    if not seen[path] and opts.skip_open ~= false then
+      utils.open_buffer(path)
     end
   end
 end
 
----Save the bufferline state
 function M.on_save()
   local items = get_items()
   M.update_state(items)
@@ -103,6 +106,14 @@ function M.on_save()
   end)
 
   state.save(items)
+end
+
+function M.select_item()
+  local line = vim.api.nvim_get_current_line()
+  local path = vim.fn.fnamemodify(line, ":p")
+  close_window()
+  local bufnr = utils.open_buffer(path)
+  vim.api.nvim_set_current_buf(bufnr)
 end
 
 function M.toggle_window()
@@ -142,6 +153,13 @@ function M.toggle_window()
     "n",
     "<esc>",
     ":lua require('blui.ui').toggle_window()<cr>",
+    { noremap = true, silent = true }
+  )
+  vim.api.nvim_buf_set_keymap(
+    BUF_ID,
+    "n",
+    "<cr>",
+    ":lua require('blui.ui').select_item()<cr>",
     { noremap = true, silent = true }
   )
 

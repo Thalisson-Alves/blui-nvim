@@ -50,4 +50,13 @@ function M.read_file(path)
   return content
 end
 
+---Open a buffer if it's not already open
+---@param path string
+---@return number
+function M.open_buffer(path)
+  local bufnr = vim.fn.bufadd(path)
+  vim.api.nvim_buf_set_option(bufnr, "buflisted", true)
+  return bufnr
+end
+
 return M
